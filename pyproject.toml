@@ -1,0 +1,24 @@
+[project]
+name = "datathon-2026-r1"
+version = "0.1.0"
+description = "Datathon 2026 round 1 analysis and modeling project"
+readme = "README.md"
+authors = []
+
+requires-python = ">=3.14"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.4",
+    "pandas>=3.0.2",
+    "scikit-learn>=1.8.0",
+    "seaborn>=0.13.2",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.4,<0.10.0"]
+build-backend = "uv_build"
