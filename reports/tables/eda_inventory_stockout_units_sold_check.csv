@@ -1,0 +1,2 @@
+stockout_rows,stockout_rows_with_units_sold_gt_0,stockout_rows_with_units_sold_not_0,rule_holds_pct,mean_units_sold_when_stockout,median_units_sold_when_stockout,max_units_sold_when_stockout
+40571,40571,40571,0.0,15.486086120628034,6.0,670.0

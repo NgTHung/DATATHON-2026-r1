@@ -1,0 +1,2 @@
+column,rows,missing_rows,blank_rows,missing_or_blank_rows,missing_or_blank_pct,unique_non_null_channels
+acquisition_channel,121930,0,0,0,0.0,6

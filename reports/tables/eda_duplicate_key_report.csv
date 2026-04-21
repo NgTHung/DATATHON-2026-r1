@@ -1,0 +1,7 @@
+table,key_columns,rows,duplicate_key_rows,duplicate_key_pct
+reviews,review_id,113551,0,0.0
+customers,customer_id,121930,0,0.0
+products,product_id,2412,0,0.0
+promotions,promo_id,50,0,0.0
+orders,order_id,646945,0,0.0
+returns,return_id,39939,0,0.0
