@@ -294,72 +294,170 @@ def product_revenue_seasonality(tables: dict[str, pd.DataFrame]) -> pd.DataFrame
 
 
 def inventory_snapshot_coverage(inventory: pd.DataFrame) -> pd.DataFrame:
-    """Check whether inventory snapshots cover every month in the observed range."""
+    """Check whether monthly inventory snapshots cover the observed product set."""
     observed_months = inventory["snapshot_date"].dt.to_period("M").dropna().sort_values().unique()
     if len(observed_months) == 0:
-        return pd.DataFrame(columns=["month", "has_snapshot", "snapshot_dates", "snapshot_rows", "unique_products"])
+        return pd.DataFrame(
+            columns=[
+                "snapshot_month",
+                "has_snapshot",
+                "snapshot_dates",
+                "product_month_rows",
+                "unique_products",
+                "duplicate_product_snapshot_rows",
+            ]
+        )
 
     full_months = pd.period_range(observed_months[0], observed_months[-1], freq="M")
     monthly = (
-        inventory.assign(month=inventory["snapshot_date"].dt.to_period("M").dt.to_timestamp())
-        .groupby("month", as_index=False)
+        inventory.assign(
+            snapshot_month=inventory["snapshot_date"].dt.to_period("M").dt.to_timestamp(),
+            duplicate_product_snapshot=inventory.duplicated(["product_id", "snapshot_date"]),
+        )
+        .groupby("snapshot_month", as_index=False)
         .agg(
             snapshot_dates=("snapshot_date", "nunique"),
-            snapshot_rows=("product_id", "size"),
+            product_month_rows=("product_id", "size"),
             unique_products=("product_id", "nunique"),
+            duplicate_product_snapshot_rows=("duplicate_product_snapshot", "sum"),
         )
     )
-    coverage = pd.DataFrame({"month": full_months.to_timestamp()})
-    coverage = coverage.merge(monthly, on="month", how="left")
-    coverage["has_snapshot"] = coverage["snapshot_rows"].notna()
-    coverage[["snapshot_dates", "snapshot_rows", "unique_products"]] = coverage[
-        ["snapshot_dates", "snapshot_rows", "unique_products"]
+    coverage = pd.DataFrame({"snapshot_month": full_months.to_timestamp()})
+    coverage = coverage.merge(monthly, on="snapshot_month", how="left")
+    coverage["has_snapshot"] = coverage["product_month_rows"].notna()
+    coverage[["snapshot_dates", "product_month_rows", "unique_products", "duplicate_product_snapshot_rows"]] = coverage[
+        ["snapshot_dates", "product_month_rows", "unique_products", "duplicate_product_snapshot_rows"]
     ].fillna(0).astype(int)
-    return coverage[["month", "has_snapshot", "snapshot_dates", "snapshot_rows", "unique_products"]]
+    return coverage[
+        [
+            "snapshot_month",
+            "has_snapshot",
+            "snapshot_dates",
+            "product_month_rows",
+            "unique_products",
+            "duplicate_product_snapshot_rows",
+        ]
+    ]
 
 
 def inventory_status_summary(inventory: pd.DataFrame) -> pd.DataFrame:
-    """Summarize stockout, overstock, reorder, and fill-rate metrics by snapshot month."""
-    monthly = inventory.assign(month=inventory["snapshot_date"].dt.to_period("M").dt.to_timestamp())
+    """Summarize monthly product-snapshot inventory operations metrics."""
+    monthly = inventory.assign(snapshot_month=inventory["snapshot_date"].dt.to_period("M").dt.to_timestamp())
     summary = (
-        monthly.groupby("month", as_index=False)
+        monthly.groupby("snapshot_month", as_index=False)
         .agg(
-            rows=("product_id", "size"),
+            product_month_rows=("product_id", "size"),
             unique_products=("product_id", "nunique"),
-            stockout_products=("stockout_flag", "sum"),
-            overstock_products=("overstock_flag", "sum"),
-            reorder_products=("reorder_flag", "sum"),
+            stockout_product_months=("stockout_flag", "sum"),
+            overstock_product_months=("overstock_flag", "sum"),
+            reorder_product_months=("reorder_flag", "sum"),
+            total_stockout_days=("stockout_days", "sum"),
+            avg_stockout_days=("stockout_days", "mean"),
             avg_fill_rate=("fill_rate", "mean"),
             median_fill_rate=("fill_rate", "median"),
+            avg_days_of_supply=("days_of_supply", "mean"),
+            median_days_of_supply=("days_of_supply", "median"),
+            avg_sell_through_rate=("sell_through_rate", "mean"),
             avg_stock_on_hand=("stock_on_hand", "mean"),
             total_units_received=("units_received", "sum"),
             total_units_sold=("units_sold", "sum"),
         )
     )
-    summary["stockout_rate"] = summary["stockout_products"] / summary["rows"]
-    summary["overstock_rate"] = summary["overstock_products"] / summary["rows"]
-    summary["reorder_rate"] = summary["reorder_products"] / summary["rows"]
+    summary["stockout_product_month_rate"] = summary["stockout_product_months"] / summary["product_month_rows"]
+    summary["overstock_product_month_rate"] = summary["overstock_product_months"] / summary["product_month_rows"]
+    summary["reorder_product_month_rate"] = summary["reorder_product_months"] / summary["product_month_rows"]
+    summary["stockout_days_per_product_month"] = summary["total_stockout_days"] / summary["product_month_rows"]
     return summary
 
 
+def inventory_schema_quality_checks(inventory: pd.DataFrame, products: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Validate inventory against the documented monthly product-snapshot schema."""
+
+    def record(check: str, invalid_mask: pd.Series, description: str) -> dict[str, object]:
+        invalid_count = int(invalid_mask.fillna(True).sum())
+        return {
+            "check": check,
+            "passed": invalid_count == 0,
+            "rows_checked": int(len(invalid_mask)),
+            "invalid_rows": invalid_count,
+            "invalid_pct": float(invalid_count / len(invalid_mask)) if len(invalid_mask) else 0.0,
+            "description": description,
+        }
+
+    records = [
+        record(
+            "snapshot_date_is_month_end",
+            inventory["snapshot_date"] != inventory["snapshot_date"] + pd.offsets.MonthEnd(0),
+            "Inventory snapshots should be end-of-month dates.",
+        ),
+        record(
+            "year_matches_snapshot_date",
+            inventory["year"] != inventory["snapshot_date"].dt.year,
+            "Denormalized year should equal snapshot_date year.",
+        ),
+        record(
+            "month_matches_snapshot_date",
+            inventory["month"] != inventory["snapshot_date"].dt.month,
+            "Denormalized month should equal snapshot_date month.",
+        ),
+        record(
+            "unique_product_month_snapshot",
+            inventory.duplicated(["product_id", "snapshot_date"]),
+            "Schema expects one row per product per monthly snapshot.",
+        ),
+        record(
+            "stockout_flag_matches_stockout_days",
+            (inventory["stockout_flag"] == 1) != (inventory["stockout_days"] > 0),
+            "stockout_flag should indicate whether any stockout days occurred in the month.",
+        ),
+        record(
+            "stockout_days_within_month_length",
+            (inventory["stockout_days"] < 0) | (inventory["stockout_days"] > inventory["snapshot_date"].dt.days_in_month),
+            "stockout_days should be between 0 and the number of days in the snapshot month.",
+        ),
+        record(
+            "fill_rate_between_0_and_1",
+            ~inventory["fill_rate"].between(0, 1, inclusive="both"),
+            "fill_rate should be a share between 0 and 1.",
+        ),
+        record(
+            "sell_through_rate_between_0_and_1",
+            ~inventory["sell_through_rate"].between(0, 1, inclusive="both"),
+            "sell_through_rate should be a share between 0 and 1.",
+        ),
+        record(
+            "nonnegative_quantity_metrics",
+            (inventory[["stock_on_hand", "units_received", "units_sold", "days_of_supply"]] < 0).any(axis=1),
+            "Inventory quantities and days_of_supply should be nonnegative.",
+        ),
+    ]
+
+    if products is not None:
+        product_attributes = products[["product_id", "product_name", "category", "segment"]]
+        compared = inventory[["product_id", "product_name", "category", "segment"]].merge(
+            product_attributes,
+            on="product_id",
+            how="left",
+            suffixes=("_inventory", "_product"),
+        )
+        missing_product = compared["product_name_product"].isna()
+        attribute_mismatch = missing_product
+        for column in ["product_name", "category", "segment"]:
+            attribute_mismatch |= compared[f"{column}_inventory"] != compared[f"{column}_product"]
+        records.append(
+            record(
+                "product_attributes_match_products",
+                attribute_mismatch,
+                "Denormalized product_name, category, and segment should match products.csv.",
+            )
+        )
+
+    return pd.DataFrame(records)
+
+
 def inventory_stockout_units_sold_check(inventory: pd.DataFrame) -> pd.DataFrame:
-    """Check whether units_sold equals zero for rows flagged as out of stock."""
-    stockout = inventory[inventory["stockout_flag"].astype(bool)].copy()
-    violations = stockout[stockout["units_sold"].fillna(0) != 0]
-    units_sold_when_stockout = stockout["units_sold"].fillna(0)
-    return pd.DataFrame(
-        [
-            {
-                "stockout_rows": int(len(stockout)),
-                "stockout_rows_with_units_sold_gt_0": int((stockout["units_sold"].fillna(0) > 0).sum()),
-                "stockout_rows_with_units_sold_not_0": int(len(violations)),
-                "rule_holds_pct": float((stockout["units_sold"].fillna(0) == 0).mean()) if len(stockout) else 1.0,
-                "mean_units_sold_when_stockout": float(units_sold_when_stockout.mean()) if len(stockout) else 0.0,
-                "median_units_sold_when_stockout": float(units_sold_when_stockout.median()) if len(stockout) else 0.0,
-                "max_units_sold_when_stockout": float(units_sold_when_stockout.max()) if len(stockout) else 0.0,
-            }
-        ]
-    )
+    """Backward-compatible wrapper for the corrected inventory schema checks."""
+    return inventory_schema_quality_checks(inventory)
 
 
 def payment_revenue_proxy_check(order_revenue: pd.DataFrame, payments: pd.DataFrame) -> pd.DataFrame:
@@ -399,7 +497,7 @@ def write_eda_reports(tables: dict[str, pd.DataFrame]) -> dict[str, Path]:
     seasonal_product_revenue = product_revenue_seasonality(tables)
     inventory_coverage = inventory_snapshot_coverage(tables["inventory"])
     inventory_status = inventory_status_summary(tables["inventory"])
-    inventory_stockout_check = inventory_stockout_units_sold_check(tables["inventory"])
+    inventory_quality = inventory_schema_quality_checks(tables["inventory"], tables["products"])
     payment_proxy = payment_revenue_proxy_summary(order_revenue, tables["payments"])
 
     reports = {
@@ -414,7 +512,7 @@ def write_eda_reports(tables: dict[str, pd.DataFrame]) -> dict[str, Path]:
         "eda_product_revenue_seasonality": seasonal_product_revenue,
         "eda_inventory_snapshot_coverage": inventory_coverage,
         "eda_inventory_status_summary": inventory_status,
-        "eda_inventory_stockout_units_sold_check": inventory_stockout_check,
+        "eda_inventory_schema_quality_checks": inventory_quality,
         "eda_payment_revenue_proxy": payment_proxy,
     }
 

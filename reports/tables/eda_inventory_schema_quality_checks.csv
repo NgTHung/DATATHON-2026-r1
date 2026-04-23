@@ -1,0 +1,11 @@
+check,passed,rows_checked,invalid_rows,invalid_pct,description
+snapshot_date_is_month_end,True,60247,0,0.0,Inventory snapshots should be end-of-month dates.
+year_matches_snapshot_date,True,60247,0,0.0,Denormalized year should equal snapshot_date year.
+month_matches_snapshot_date,True,60247,0,0.0,Denormalized month should equal snapshot_date month.
+unique_product_month_snapshot,True,60247,0,0.0,Schema expects one row per product per monthly snapshot.
+stockout_flag_matches_stockout_days,True,60247,0,0.0,stockout_flag should indicate whether any stockout days occurred in the month.
+stockout_days_within_month_length,True,60247,0,0.0,stockout_days should be between 0 and the number of days in the snapshot month.
+fill_rate_between_0_and_1,True,60247,0,0.0,fill_rate should be a share between 0 and 1.
+sell_through_rate_between_0_and_1,True,60247,0,0.0,sell_through_rate should be a share between 0 and 1.
+nonnegative_quantity_metrics,True,60247,0,0.0,Inventory quantities and days_of_supply should be nonnegative.
+product_attributes_match_products,True,60247,0,0.0,"Denormalized product_name, category, and segment should match products.csv."
