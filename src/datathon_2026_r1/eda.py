@@ -10,18 +10,18 @@ RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
 REPORT_TABLES_DIR = PROJECT_ROOT / "reports" / "tables"
 
 TABLES: dict[str, Path] = {
-    "reviews": RAW_DATA_DIR / "analytical" / "reviews.csv",
     "sales": RAW_DATA_DIR / "analytical" / "sales.csv",
-    "web_traffic": RAW_DATA_DIR / "analytical" / "web_traffic.csv",
+    "sample_submission": RAW_DATA_DIR / "analytical" / "sample_submission.csv",
     "customers": RAW_DATA_DIR / "master" / "customers.csv",
     "geography": RAW_DATA_DIR / "master" / "geography.csv",
     "products": RAW_DATA_DIR / "master" / "products.csv",
+    "promotions": RAW_DATA_DIR / "master" / "promotions.csv",
     "inventory": RAW_DATA_DIR / "operational" / "inventory.csv",
-    "promotions": RAW_DATA_DIR / "operational" / "promotions.csv",
-    "sample_submission": RAW_DATA_DIR / "sample_submission.csv",
+    "web_traffic": RAW_DATA_DIR / "operational" / "web_traffic.csv",
     "order_items": RAW_DATA_DIR / "transaction" / "order_items.csv",
     "orders": RAW_DATA_DIR / "transaction" / "orders.csv",
     "payments": RAW_DATA_DIR / "transaction" / "payments.csv",
+    "reviews": RAW_DATA_DIR / "transaction" / "reviews.csv",
     "returns": RAW_DATA_DIR / "transaction" / "returns.csv",
     "shipments": RAW_DATA_DIR / "transaction" / "shipments.csv",
 }
