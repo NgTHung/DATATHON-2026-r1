@@ -1,0 +1,32 @@
+\section{Phần 2. Trực quan hóa và phân tích dữ liệu}
+
+\subsection{Mục tiêu phân tích}
+Phần này tập trung vào một câu chuyện xuyên suốt: doanh nghiệp không thiếu nhu cầu thị trường, nhưng đang thất thoát giá trị ở cả hai đầu Demand và Supply. Năm biểu đồ trọng tâm (Chart 1, 3, 5, 7, 8) được dùng để lần lượt trả lời ba câu hỏi thực hành: rò rỉ xảy ra ở đâu trong hành trình khách hàng, nhóm khách nào quyết định phần lớn doanh thu lặp lại, và hệ thống tồn kho có đang phục vụ đúng nơi tạo doanh thu hay không.
+
+\subsection{Chart 1. Funnel: Customer Order Status Flow}
+
+Chart 1 cho thấy rò rỉ diễn ra ở cả hai điểm quan trọng: trước đơn đầu và ngay sau đơn đầu. Điều này nghĩa là bài toán tăng trưởng không chỉ nằm ở acquisition mà còn nằm ở activation và giữ chân sớm. Nếu chỉ tăng traffic mà không giảm hai điểm rò rỉ này, hiệu suất CAC sẽ giảm dần vì quy mô khách đi đến repeat revenue không tăng tương xứng. Hàm ý hành động là ưu tiên tăng chuyển đổi signup $\rightarrow$ first order và thiết kế kịch bản giữ chân 30--90 ngày cho nhóm có nguy cơ one-time cao.
+
+\subsection{Chart 3. Time-to-Second-Purchase Distribution}
+
+Chart 3 bổ sung rằng repeat demand không biến mất, mà xuất hiện muộn hơn kỳ vọng. Vì vậy, nếu đánh giá retention chỉ trong 30--90 ngày thì doanh nghiệp dễ kết luận sai rằng khách không quay lại, từ đó cắt nhầm ngân sách CRM. Cách tiếp cận phù hợp là đo hai lớp KPI: lớp ngắn hạn để tối ưu tái mua sớm và lớp dài hạn (180/365 ngày) để phản ánh đúng CLV. Nói cách khác, đây là bài toán lệch nhịp thời gian, không phải bài toán thiếu nhu cầu lặp lại.
+
+\subsection{Chart 5. Customer Revenue Concentration Curve}
+
+Chart 5 cho thấy doanh thu tập trung vào một nhóm khách hàng nhỏ và đi cùng tần suất mua. Insight cốt lõi là tăng trưởng bền vững không đến từ việc dàn đều nguồn lực cho toàn bộ tệp, mà đến từ quản trị theo tầng giá trị. Nếu thiếu chiến lược phân tầng, doanh nghiệp vừa lãng phí ngân sách chăm sóc đại trà, vừa đối mặt rủi ro phụ thuộc vào nhóm top. Vì vậy cần tách nhóm Top, Mid-high và Long-tail để ưu tiên ngân sách retention theo đóng góp doanh thu và biên lợi nhuận.
+
+\subsection{Chart 7. Inventory Risk Matrix by Category and Segment}
+
+Chart 7 cho thấy hệ thống tồn kho đang lệch pha kép: thiếu hàng ở nơi cầu cao và dư hàng ở nơi quay vòng chậm. Đây là nguyên nhân khiến doanh nghiệp đồng thời mất doanh thu và giam vốn lưu động. Nếu không hiệu chỉnh, chi phí vận hành sẽ tăng trong khi tốc độ tăng doanh thu giảm. Hành động ưu tiên là tái phân bổ tồn kho theo category-segment, đi kèm ngưỡng cảnh báo kép để kiểm soát song song stockout và overstock.
+
+\subsection{Chart 8. Fill Rate vs Demand by Category}
+
+Chart 8 xác nhận rõ hơn điểm nghẽn vận hành: có danh mục demand cao nhưng fill rate thấp, tức năng lực cung ứng chưa ưu tiên đúng nơi tạo doanh thu lớn nhất. Về quản trị, đây là vấn đề phân bổ service-level theo giá trị kinh tế danh mục. Cách làm đề xuất là phân tầng A/B/C để ưu tiên replenishment cho nhóm A và dùng nhóm vận hành tốt làm chuẩn hiệu chỉnh forecast, safety stock và nhịp cấp hàng.
+
+\subsection{Lộ trình triển khai 90 ngày (định lượng)}
+Để biến insight thành kết quả thực thi, nhóm đề xuất lộ trình 90 ngày theo ba luồng đồng bộ Demand--Supply. Luồng 1 là Activation \& Early Retention, đặt mục tiêu tăng chuyển đổi signup $\rightarrow$ first order thêm 3--5 điểm phần trăm và tăng ordered $\rightarrow$ repeat thêm 2--3 điểm phần trăm. Luồng 2 là Value-tier CRM, mục tiêu tăng tỷ trọng doanh thu từ nhóm Mid-high thêm 3 điểm phần trăm sau 2 quý để giảm phụ thuộc vào nhóm top. Luồng 3 là Supply Reallocation, mục tiêu giảm stockout ở nhóm high-volume và giảm overstock ở nhóm low-rotation cùng tối thiểu 5 điểm phần trăm sau 2 chu kỳ replenishment. KPI theo dõi hàng tuần gồm conversion uplift, repeat rate theo cohort, fill rate theo tier danh mục, stockout/overstock theo segment và cơ cấu doanh thu theo tầng khách hàng.
+
+\subsection{Kết luận phần trực quan hóa}
+Từ 5 biểu đồ chính, có thể kết luận rằng điểm nghẽn cốt lõi không phải thiếu khách hay thiếu hàng tuyệt đối, mà là thiếu cơ chế kết nối xuyên suốt giữa chuyển đổi khách hàng và điều phối cung ứng theo tín hiệu nhu cầu thực tế. Đây cũng là điểm sáng tạo của câu chuyện phân tích: thay vì tách rời Demand và Supply, báo cáo gắn hai phía trong một vòng lặp vận hành chung, nơi chất lượng activation--retention quyết định chất lượng dự báo tồn kho, và ngược lại chất lượng cung ứng quyết định khả năng thu hồi giá trị từ demand.
+
+

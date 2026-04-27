@@ -1,0 +1,51 @@
+{
+  "random_seed": 42,
+  "target_cols": [
+    "Revenue",
+    "COGS"
+  ],
+  "lags": [
+    1,
+    7,
+    14,
+    30,
+    365
+  ],
+  "rolling_windows": [
+    7,
+    30,
+    90,
+    365
+  ],
+  "forecast_start": "2023-01-01",
+  "forecast_end": "2024-07-01",
+  "validation_year": 2022,
+  "feature_count": 68,
+  "component_models": [
+    "ridge",
+    "random_forest",
+    "lightgbm_trial_1",
+    "lightgbm_trial_2",
+    "lightgbm_trial_3"
+  ],
+  "ensemble_weights": {
+    "Revenue": {
+      "ridge": 0.25373160930309396,
+      "random_forest": 1.4683249940297994e-05,
+      "lightgbm_trial_1": 8.432382175405273e-06,
+      "lightgbm_trial_2": 0.6931612554233437,
+      "lightgbm_trial_3": 0.0530840196414466
+    },
+    "COGS": {
+      "ridge": 0.1507536858657508,
+      "random_forest": 4.2353366261217484e-11,
+      "lightgbm_trial_1": 1.7162839731105228e-10,
+      "lightgbm_trial_2": 0.5802465753799612,
+      "lightgbm_trial_3": 0.2689997385403064
+    }
+  },
+  "submission_path": "submissions\\submission_03_2_ensemble_forecast.csv",
+  "validation_results_path": "reports\\tables\\03_2_ensemble_validation_results.csv",
+  "ensemble_weights_path": "reports\\tables\\03_2_ensemble_weights.csv",
+  "feature_importance_path": "reports\\tables\\03_2_ensemble_feature_importance.csv"
+}

@@ -1,0 +1,11 @@
+target,model,weight
+Revenue,ridge,0.25373160930309396
+Revenue,random_forest,1.4683249940297994e-05
+Revenue,lightgbm_trial_1,8.432382175405273e-06
+Revenue,lightgbm_trial_2,0.6931612554233437
+Revenue,lightgbm_trial_3,0.0530840196414466
+COGS,ridge,0.1507536858657508
+COGS,random_forest,4.2353366261217484e-11
+COGS,lightgbm_trial_1,1.7162839731105228e-10
+COGS,lightgbm_trial_2,0.5802465753799612
+COGS,lightgbm_trial_3,0.2689997385403064

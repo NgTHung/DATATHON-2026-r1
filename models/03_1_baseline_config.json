@@ -1,0 +1,21 @@
+{
+  "random_seed": 42,
+  "target_cols": [
+    "Revenue",
+    "COGS"
+  ],
+  "validation_start": "2022-01-01",
+  "validation_end": "2022-12-31",
+  "forecast_start": "2023-01-01",
+  "forecast_end": "2024-07-01",
+  "baseline_descriptions": {
+    "baseline_A_lag_365": "y(t) = y(t - 365)",
+    "baseline_B_mean_364_365_366": "y(t) = mean(y(t - 364), y(t - 365), y(t - 366))",
+    "baseline_C_lag_364": "y(t) = y(t - 364), preserving weekday alignment",
+    "baseline_D_weighted": "y(t) = 0.5 * lag_364 + 0.3 * lag_7 + 0.2 * rolling_30_mean"
+  },
+  "best_baseline_by_average_rmse": "baseline_B_mean_364_365_366",
+  "best_submission_path": "submissions\\submission_03_1_best_baseline.csv",
+  "validation_results_path": "reports\\tables\\03_1_baseline_validation_results.csv",
+  "forecast_summary_path": "reports\\tables\\03_1_baseline_forecast_summary.csv"
+}
