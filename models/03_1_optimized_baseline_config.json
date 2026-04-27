@@ -1,0 +1,43 @@
+{
+  "random_seed": 42,
+  "target_cols": [
+    "Revenue",
+    "COGS"
+  ],
+  "feature_names": [
+    "lag_364",
+    "lag_365",
+    "lag_371",
+    "rolling_7",
+    "rolling_30",
+    "rolling_90"
+  ],
+  "validation_start": "2022-01-01",
+  "validation_end": "2022-12-31",
+  "forecast_start": "2023-01-01",
+  "forecast_end": "2024-07-01",
+  "weight_constraints": "non-negative weights that sum to 1, optimized separately by target validation RMSE",
+  "calibration": "monthly factor multiplied by weekday x month factor, learned from 2022 validation ratios with shrinkage toward 1.0",
+  "weights": {
+    "Revenue": {
+      "lag_364": 0.3208806720791708,
+      "lag_365": 0.45049487283654915,
+      "lag_371": 4.420467976566052e-07,
+      "rolling_7": 0.17408516703869803,
+      "rolling_30": 3.612007670155806e-05,
+      "rolling_90": 0.05450272592208283
+    },
+    "COGS": {
+      "lag_364": 0.36053180250838207,
+      "lag_365": 0.455200193459162,
+      "lag_371": 8.340583957215711e-06,
+      "rolling_7": 0.1842499562846093,
+      "rolling_30": 8.47817863185447e-07,
+      "rolling_90": 8.859346026314423e-06
+    }
+  },
+  "submission_path": "submissions\\submission_03_1_optimized_baseline.csv",
+  "validation_results_path": "reports\\tables\\03_1_optimized_baseline_validation_results.csv",
+  "weights_path": "reports\\tables\\03_1_optimized_baseline_weights.csv",
+  "calibration_path": "reports\\tables\\03_1_optimized_baseline_calibration.csv"
+}

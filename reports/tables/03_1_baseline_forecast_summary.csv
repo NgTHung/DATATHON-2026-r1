@@ -1,0 +1,5 @@
+baseline,description,submission_path,forecast_rows,revenue_mean,cogs_mean
+baseline_A_lag_365,y(t) = y(t - 365),submissions\submission_03_1_baseline_A_lag_365.csv,548,3415950.8985583945,2963665.128029197
+baseline_B_mean_364_365_366,"y(t) = mean(y(t - 364), y(t - 365), y(t - 366))",submissions\submission_03_1_baseline_B_mean_364_365_366.csv,548,3414612.4912429033,2962250.0320782643
+baseline_C_lag_364,"y(t) = y(t - 364), preserving weekday alignment",submissions\submission_03_1_baseline_C_lag_364.csv,548,3413818.538521898,2961181.3026277376
+baseline_D_weighted,y(t) = 0.5 * lag_364 + 0.3 * lag_7 + 0.2 * rolling_30_mean,submissions\submission_03_1_baseline_D_weighted.csv,548,3326185.7650418594,2894230.831641216
