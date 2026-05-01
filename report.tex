@@ -19,5 +19,60 @@ Trong 90 ngày tới, ưu tiên thực thi gồm ba trục: \textbf{(1) giảm r
 \subsection{Supply-side}
 Phần 1.2 sẽ được nhóm phụ trách Supply-side bổ sung sau. Nội dung dự kiến tập trung vào năng lực đáp ứng nhu cầu theo danh mục/phân khúc, các điểm nghẽn stockout-overstock, và mức độ đồng bộ giữa tín hiệu demand với quyết định phân bổ tồn kho.
 
-\section{Phần 2. Mô hình dữ liệu}
-Phần này chưa triển khai trong phạm vi hiện tại và sẽ được hoàn thiện ở bước tiếp theo.
+\section{Phần 2. Mô hình dự đoán}
+\subsection{Đặt vấn đề \& Thách thức}
+Bài toán yêu cầu dự báo doanh thu và giá vốn (COGS) trong khung thời gian cực dài (18 tháng - 548 ngày) mang đến 3 rào cản chí tử:
+\begin{itemize}[leftmargin=*, nosep]
+    \item \textbf{Cấm kỵ biến trễ (Lag-free):} Khung thời gian 548 ngày khiến các biến tự hồi quy ($y_{t-n}$) mất tác dụng, nguy cơ tích lũy sai số (error accumulation) rất lớn.
+    \item \textbf{Đứt gãy cấu trúc (Regime Drift):} Mức nền doanh thu thay đổi đột ngột sau đại dịch (2020-2022).
+    \item \textbf{Biến động cục bộ:} Biên độ dao động cực lớn tại các sự kiện Lễ/Tết và ngày siêu sale (Black Friday).
+\end{itemize}
+
+\subsection{Khai phá Đặc trưng (Feature Engineering)}
+Để triệt tiêu sự phụ thuộc vào biến trễ, mô hình tiếp cận theo hướng \textbf{Direct Forecasting}, xây dựng tọa độ thời gian tuyệt đối:
+\begin{itemize}[leftmargin=*, nosep]
+    \item \textbf{Đặc trưng Fourier (Cyclical Encoding):} Chuyển đổi \textit{Day of Year, Day of Month, Day of Week} thành các sóng lượng giác ($\sin, \cos$). Giúp mô hình nội suy hoàn hảo bản đồ mùa vụ.
+    \item \textbf{Sự kiện \& Tiệm cận (Proximity):} Tính khoảng cách đếm ngược/tiến đến các mốc sự kiện (Tet distance, End of month) giúp dự báo chính xác các đỉnh dư âm và bắt nhịp sale.
+\end{itemize}
+\subsection{Chiến lược Kiểm định \& Tuân thủ Ràng buộc}
+Nhằm đánh giá mô hình khách quan và triệt tiêu hoàn toàn rủi ro rò rỉ dữ liệu (\textit{Data Leakage}), hệ thống tuân thủ các tiêu chuẩn kiểm định khắt khe nhất:
+\begin{itemize}[leftmargin=*, nosep]
+    \item \textbf{Cross-Validation đúng chiều thời gian:} K-Fold ngẫu nhiên truyền thống bị loại bỏ để tránh rò rỉ tương lai (Future-looking leakage). Nhóm áp dụng \textbf{3 Temporal Folds} (Kiểm định cuộn theo thời gian). Mô hình chỉ được phép học từ dữ liệu quá khứ để dự báo khoảng thời gian OOF (Out-of-Fold) ở tương lai, mô phỏng tuyệt đối bài toán thực tế.
+    \item \textbf{Tuân thủ Constraint \& Anti-Leakage:} Bằng việc cam kết kiến trúc \textit{Lag-free} (không sử dụng biến trễ), pipeline chặn đứng hiệu ứng tích lũy sai số và rò rỉ dữ liệu chéo. Việc dò tìm tham số (Hyperparameter tuning cho Tier 1) được thực hiện hoàn toàn độc lập trên tập Validation, cách ly tuyệt đối khỏi tập Test bí mật.
+\end{itemize}
+\subsection{Kiến trúc Ensemble Đa tầng}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\linewidth]{architecture.png}
+    \caption{\textit{Luồng tích hợp dữ liệu và Kiến trúc 2 tầng.}}
+    \label{fig:architecture}
+\end{figure}
+
+\subsubsection{Tier 1: Custom Seasonal Blending}
+Nhằm khắc phục nhược điểm của mô hình Generalist (LightGBM gốc) trước các đứt gãy margin cục bộ, 4 mô hình \textbf{Q-Specialists} (chuyên gia theo Quý) được khởi tạo. 
+Thay vì sử dụng các hệ số pha trộn toàn cục, nhóm áp dụng chiến lược gán trọng số có chủ đích (Heuristic Blending) dựa trên đặc tính phân phối của từng quý. Cụ thể, hệ số pha trộn chuyên gia $\alpha$ được thiết lập ở mức $0.6$ cho các quý có xu hướng ổn định (Q1, Q2, Q4). Riêng tại Q3 - giai đoạn có biến động mùa vụ phức tạp và độ lệch margin cao nhất, hệ số $\alpha_3$ được kích hoạt ở ngưỡng tối đa $1.0$ (chỉ định định tuyến $100\%$ từ Q3-Specialist) nhằm ép triệt để đường dự báo về đúng vùng dao động thực tế.
+\subsubsection{Tier 2: Multi-family Integration}
+Kết quả Blending ở Tier 1 được kết hợp song song với 2 hệ tư tưởng khác biệt để bình ổn rủi ro:
+\begin{itemize}[leftmargin=*, nosep]
+    \item \textbf{Ridge Regression:} Bắt Global Linear Trend ổn định.
+    \item \textbf{Prophet:} Chuyên biệt xử lý Post-Regime (train từ 2020).
+\end{itemize}
+Trọng số kết hợp cuối cùng được tối ưu bằng Non-Negative Least Squares (NNLS).
+
+\subsection{Động lực Dự báo (Model Explainability)}
+Sử dụng Feature Importance (\textit{Split Count}) của mô hình lõi LightGBM để minh bạch hóa động lực học của thuật toán.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{feature_importance.png}
+    \caption{\textit{Đóng góp đặc trưng của mô hình LightGBM lõi.}}
+    \label{fig:feat_imp}
+\end{figure}
+
+\textbf{Insight từ mô hình:} Biểu đồ Phân nhánh minh chứng chiến lược \textit{Lag-free} đã thành công rực rỡ. Nút gốc \texttt{t\_days} định hình xu hướng vĩ mô (Trend), trong khi các đặc trưng lượng giác Fourier (\texttt{cos\_y, sin\_y}) và đếm ngược sự kiện (\texttt{tet\_days\_diff}) đóng góp lượng chia nhánh cao nhất để định hình các đỉnh doanh thu.
+
+\subsection{5. Hậu xử lý (Calibration)}
+Toàn bộ quá trình huấn luyện diễn ra trên không gian Log (\textit{Log-space}) để trị nhiễu và sai phân phương sai. Trước khi xuất kết quả cuối cùng, hệ số điều chỉnh CR (Revenue) và CC (COGS) được nội suy thông qua kiểm định tương đối, bẻ dự báo về \textit{Level-space} để khắc phục hiện tượng \textit{Calibration Bias} (dự đoán thấp hơn thực tế của hàm hàm Log).
+
+\end{document}
