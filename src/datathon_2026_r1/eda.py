@@ -370,6 +370,41 @@ def inventory_status_summary(inventory: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
+def inventory_category_fill_rate_lost_unit_proxy(inventory: pd.DataFrame) -> pd.DataFrame:
+    """Summarize category-level fill rate and implied lost unit demand.
+
+    The lost-unit proxy assumes observed units_sold equals fulfilled demand:
+    lost_unit_sold_proxy = units_sold * (1 - fill_rate) / fill_rate.
+    Rows with fill_rate <= 0 receive a missing proxy to avoid division by zero.
+    """
+    enriched = inventory.copy()
+    valid_fill_rate = enriched["fill_rate"].where(enriched["fill_rate"] > 0)
+    enriched["lost_unit_sold_proxy"] = enriched["units_sold"] * (1 - valid_fill_rate) / valid_fill_rate
+
+    summary = (
+        enriched.groupby("category", as_index=False)
+        .agg(
+            product_month_rows=("product_id", "size"),
+            unique_products=("product_id", "nunique"),
+            stockout_product_months=("stockout_flag", "sum"),
+            total_stockout_days=("stockout_days", "sum"),
+            avg_fill_rate=("fill_rate", "mean"),
+            median_fill_rate=("fill_rate", "median"),
+            total_units_sold=("units_sold", "sum"),
+            lost_unit_sold_proxy=("lost_unit_sold_proxy", "sum"),
+        )
+        .sort_values("lost_unit_sold_proxy", ascending=False)
+        .reset_index(drop=True)
+    )
+    summary["estimated_unconstrained_units"] = summary["total_units_sold"] + summary["lost_unit_sold_proxy"]
+    summary["lost_unit_sold_proxy_share"] = (
+        summary["lost_unit_sold_proxy"] / summary["estimated_unconstrained_units"]
+    )
+    summary["unit_weighted_fill_rate"] = summary["total_units_sold"] / summary["estimated_unconstrained_units"]
+    summary["stockout_product_month_rate"] = summary["stockout_product_months"] / summary["product_month_rows"]
+    return summary
+
+
 def inventory_schema_quality_checks(inventory: pd.DataFrame, products: pd.DataFrame | None = None) -> pd.DataFrame:
     """Validate inventory against the documented monthly product-snapshot schema."""
 
@@ -497,6 +532,7 @@ def write_eda_reports(tables: dict[str, pd.DataFrame]) -> dict[str, Path]:
     seasonal_product_revenue = product_revenue_seasonality(tables)
     inventory_coverage = inventory_snapshot_coverage(tables["inventory"])
     inventory_status = inventory_status_summary(tables["inventory"])
+    inventory_category_fill_rate = inventory_category_fill_rate_lost_unit_proxy(tables["inventory"])
     inventory_quality = inventory_schema_quality_checks(tables["inventory"], tables["products"])
     payment_proxy = payment_revenue_proxy_summary(order_revenue, tables["payments"])
 
@@ -512,6 +548,7 @@ def write_eda_reports(tables: dict[str, pd.DataFrame]) -> dict[str, Path]:
         "eda_product_revenue_seasonality": seasonal_product_revenue,
         "eda_inventory_snapshot_coverage": inventory_coverage,
         "eda_inventory_status_summary": inventory_status,
+        "eda_inventory_category_fill_rate_lost_unit_proxy": inventory_category_fill_rate,
         "eda_inventory_schema_quality_checks": inventory_quality,
         "eda_payment_revenue_proxy": payment_proxy,
     }
